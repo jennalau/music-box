@@ -8,12 +8,12 @@
 #include <avr/eeprom.h>
 #include <stdio.h>
 #include "encoder.h"
+#include "musicbox.h"
 
 #define ENCODER_BITS ((1 << PC1) | (1 << PC5))
 
 
 void encoder_init(void) {
-	// encoder
   	PORTC |= ENCODER_BITS;	// enable pull up resistors
 	PCICR |= (1 << PCIE1); 						// set PCIE1 bit for port C
 	PCMSK1 |= ((1 << PCINT9) | (1 << PCINT13));	// set PCINT9 (PC1) & PCINT13 (PC5) in PORTC mask register

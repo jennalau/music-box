@@ -28,16 +28,18 @@
 #define NUM_TONES 26
 #define NUM_NOTES 21
 
+unsigned char curr_screen = 1;
+unsigned char scr_changed = 0;
 
 volatile unsigned char isr_count = 0; 
 
-//rotary encoder vars
+//rotary encoder definitions
 volatile unsigned char new_state, old_state;
 volatile unsigned char changed = 0;  // Flag for state change
 volatile unsigned int count = 0;		// Count to display
 volatile unsigned char a, b;
 
-volatile unsigned char scr_changed = 0;
+
 
 /* Some sample tunes for testing */
 /*
@@ -80,7 +82,6 @@ unsigned int note_freq[NUM_TONES] = {0, 131, 139, 147, 156, 165, 176, 185, 196, 
 
 int main(void)
 {
-  unsigned char curr_screen = 1;
 
   // read from EEPROM, make sure it's valid, else use 'notes' default
   // ?
