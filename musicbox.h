@@ -1,13 +1,19 @@
+// screen 
 extern unsigned char curr_screen;
-extern unsigned char notes[21];
-void display_arrows(void);
-void display_notes_and_octaves(void);
-void display_octave(int, int);
-void show_screen(void);
+extern int curr_col;
 
-extern unsigned char new_state, old_state;
+// musicbox
 extern char *note_str[];
+extern unsigned char notes[21];
+extern unsigned int note_freq[26];
 
-extern unsigned char changed;  // Flag for state change
+// rotary encoder
+extern unsigned char new_state, old_state;
+extern unsigned char changed;   // Flag for state change
 extern unsigned int count;		// Count to display
 extern unsigned char a, b;
+
+// buzzer
+extern unsigned char isr_count;
+
+// LED

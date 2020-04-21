@@ -7,6 +7,8 @@
 #include <stdio.h>
 
 #include "lcd.h"                // Declarations of the LCD functions
+#include "musicbox.h"
+#include "display.h"
 
 /* This function not declared in lcd.h since
    should only be used by the routines in this file. */
@@ -142,4 +144,17 @@ void splash_screen(void){
     lcd_stringout(bday);
 
     _delay_ms(1000); // delay 1 second
+}
+
+// update note on rotary encoder change
+void update_note(void){
+    lcd_moveto(0, curr_col);
+    _delay_ms(100);
+    lcd_stringout(note_str[count]);
+}
+// update octave on rotary encoder change
+void update_octave(void){
+  lcd_moveto(1, curr_col);
+  _delay_ms(100);
+  display_octave(count, curr_col);
 }

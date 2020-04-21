@@ -28,18 +28,20 @@
 #define NUM_TONES 26
 #define NUM_NOTES 21
 
+// display definitions
 unsigned char curr_screen = 1;
+unsigned char next_screen = 1;
 unsigned char scr_changed = 0;
+int curr_col = 1;
 
+// buzzer definitions
 volatile unsigned char isr_count = 0; 
 
 //rotary encoder definitions
 volatile unsigned char new_state, old_state;
-volatile unsigned char changed = 0;  // Flag for state change
-volatile unsigned int count = 0;		// Count to display
+volatile unsigned char changed = 0;  // Flag for encoder state change
+volatile unsigned int count = 0;		// count of note_str index
 volatile unsigned char a, b;
-
-
 
 /* Some sample tunes for testing */
 /*
@@ -58,18 +60,9 @@ unsigned char notes[21] = {17, 17, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 1
 // unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
 
 // array of notes, with the index mapping to the note & frequency alike
-char *note_str[] = {"  ", "C ",
-                    "C#", "D ",
-                    "D#", "E ",
-                    "F ", "F#",
-                    "G ", "G#",
-                    "A ", "A#",
-                    "B ", "C ",
-                    "C#", "D ",
-                    "D#", "E ",
-                    "F ", "F#",
-                    "G ", "G#",
-                    "A ", "A#",
+char *note_str[] = {"  ", "C ","C#", "D ","D#", "E ","F ", "F#",
+                    "G ", "G#","A ", "A#","B ", "C ","C#", "D ",
+                    "D#", "E ","F ", "F#","G ", "G#","A ", "A#",
                     "B ", "C "};
 /*
   The note_freq array contains the frequencies of the notes from C3 to C5 in
@@ -79,27 +72,17 @@ char *note_str[] = {"  ", "C ",
 unsigned int note_freq[NUM_TONES] = {0, 131, 139, 147, 156, 165, 176, 185, 196, 208, 220, 233, 247,
                                      262, 277, 294, 311, 330, 349, 370, 392, 415, 440, 466, 494, 523};
 
-
 int main(void)
 {
-
-  // read from EEPROM, make sure it's valid, else use 'notes' default
-  // ?
-  // ?
-
   // Initialize various modules and functions
   lcd_init();
   adc_init();
   encoder_init();
-  sei(); 										//enable global interrupts
-
-
-  int curr_col = 1;
-  int next_screen = 1; 
+  buzzer_init();
+  sei();          //enable global interrupts
 
   splash_screen();      // Show splash screen for 1 second
   lcd_writecommand(1);  // clear the screen
-
   show_screen();        // display arrows & notes/octaves on LCD
 
   // Read initial state of rotary encoder
@@ -116,6 +99,11 @@ int main(void)
     else
 		  old_state = 3;
     new_state = old_state;
+  
+  //TODO: Read tune from EEPROM 
+
+  //TODO: Check values read in are valid, else use 'notes' default
+
 
   while (1)
   {    
@@ -124,21 +112,9 @@ int main(void)
     // display new screen
     if(scr_changed){
       show_screen();
-      scr_changed = 0;
+      scr_changed = 0; // reset flag
     }
-      
-    // display changes from rotary encoder
-    // TODO: THIS IS NOT SHOWING IDX?
-    if(changed) {
-      changed = 0;	// Reset changed flag
-			
-      // Output count to LCD
-      lcd_moveto(0, curr_col);
-      _delay_ms(100);
-      lcd_stringout(note_str[count]);
-      lcd_moveto(0, curr_col);
-    }
-    
+
     /* Check if a button on the LCD was pressed */
     unsigned char input = adc_sample(ADC_CHANNEL);
     int left_down_press = check_button_press(input, left_adc, down_adc);
@@ -189,108 +165,24 @@ int main(void)
     }
 
     // select button pressed
-    // else if (slct_press)
-    // {
-    //   // write/save tune to EEPROM (non-volatile memory)
+    else if (slct_press)
+    {
+      // TODO: write/save tune to EEPROM (non-volatile memory)
+      // save_tune(); 
 
-    //   // play tune via buzzer
+      // play tune via buzzer
+      play_tune();
+ 
    
-      
-    // }
-
-    curr_screen = next_screen;
-
+    }
     /* If rotary encoder was rotated, change note tone */
-
-
+    if(changed) {
+      changed = 0;	// Reset changed flag
+      update_note();
+      // update_octave();
+      lcd_moveto(0, curr_col);
+    }
+    curr_screen = next_screen;
   }
-
-  // while (1)
-  // { // Loop forever
-  // }
+  while (1) {} // Loop forever
 }
-
-/* ------------------------------------------------------------------ */
-
-
-
-/* ------------------------------------------------------------------ */
-
-/*
-  Code for initializing TIMER1 and its ISR (buzzer)
-*/
-
-// play each note in a tune
-void play_tune(){
-
-  // // play each note in the tune
-  // for(int i = 0; i < NUM_NOTES; i++){
-  //   int note = notes[i];
-  //   int freq = note_freq[note];
-  //   int time = 1 / freq;
-
-  //   // update timer 
-  //   timer_init();
-
-    
-
-  //   // play frequency
-
-  // }
-  
-}
-
-void timer_init(unsigned short m){
-    TCCR1B |= (1 << WGM12);     // set fast PWM mode
-    // WGMx[2:0] bits for Fast PWM
-
-    TIMSK1 |= (1 << OCIE1A);    // enable timer at interrupt, compare match interrupt
-    OCR1A = m;                  // load max cycle count
-    TCCR1B |= (1 << CS12);      // set prescalar & start counter
-}
-
-void start_timer() {
-    TCCR1B |= (1 << CS10) | (1 << CS11);
-}
-void stop_timer() {
-    TCCR1B &= ~((1 << CS10) | (1 << CS11));
-}
-
-// generate an interrupt at the necessary 
-// interval to flip the output bit to the speaker
-
-// depending on note frequency, update the timer 
-// each time you want to play a different frequency.
-
-// generate interrupt every X seconds
-ISR(TIMER1_COMPA_vect)
-{
-  isr_count += 1; // keep track of how many times the ISR is invoked
-
-  // interrupt every 0.5s
-  if(isr_count == 500){
-
-    isr_count = 0;
-  }
-  //  determining the timer values
-  // 50% duty cycle square wave at the frequency required
-
-  // invert output bit?
-  // WGMx[2:0] bits f
-
-  // OC1A is the name of the output signal which goes to one of the pins of the IC.  
-  // OCR1A is the name of a 16-bit register in the TIMER1 module.
-
-
-
-}
-
-/* ------------------------------------------------------------------ */
-
-/*
-  Code for initializing TIMER2 (Pulse Width Modulation for LED)
-*/
-
-
-/* ------------------------------------------------------------------ */
-

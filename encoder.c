@@ -12,14 +12,13 @@
 
 #define ENCODER_BITS ((1 << PC1) | (1 << PC5))
 
-
 void encoder_init(void) {
   	PORTC |= ENCODER_BITS;	// enable pull up resistors
 	PCICR |= (1 << PCIE1); 						// set PCIE1 bit for port C
 	PCMSK1 |= ((1 << PCINT9) | (1 << PCINT13));	// set PCINT9 (PC1) & PCINT13 (PC5) in PORTC mask register
 }
 
-// interrupts for PORTC
+// interrupts for PORTC buzzer
 ISR(PCINT1_vect) {
 	// Read the input bits and determine A and B
 	unsigned char in = PINC;

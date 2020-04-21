@@ -34,11 +34,9 @@ void display_notes_and_octaves(void)
   }
 }
 
-// display an individual octave for a note on the 2nd row
-void display_octave(int index, int col)
-{
+// determine octave based on index
+int determine_octave(int index){
   int octave = 0;
-
   if ((1 <= index) && (index <= 12)){
     octave = 3;
   }
@@ -48,7 +46,14 @@ void display_octave(int index, int col)
   else if (index == 15){
     octave = 5;
   }
+  return octave;
+}
 
+// display an individual octave for a note on the 2nd row
+void display_octave(int index, int col)
+{
+  int octave = determine_octave(index);
+  
   // display octave on LCD if non-rest
   if(octave != 0){
     char octave_str[2];
