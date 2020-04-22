@@ -9,18 +9,16 @@
 #include <stdio.h>
 #include "musicbox.h"
 
-
+volatile unsigned char done = 1;
 volatile unsigned char isr_freq = 0;
 
 void buzzer_init(void) {
     DDRB |= (1 << PB4); 	    // set buzzer output
 }
-
-void timer_init(void){
+void timer_init(void) {
     TCCR1B |= (1 << WGM12);     // set fast PWM mode
     TIMSK1 |= (1 << OCIE1A);    // enable timer at interrupt, compare match interrupt
 }
-
 void start_timer(void) {
     TCCR1B |= (1 << CS10);
 }
@@ -29,13 +27,11 @@ void stop_timer(void) {
 }
 
 // play a single note from the notes array
-void play_note(int note){
-    isr_freq = note_freq[note];
-    unsigned char prescalar = 1;
+void play_note(int note, unsigned char prescalar){
+    isr_freq = note_freq[note]; // get note frequency
 
     // determining the timer values
-    unsigned short m = 16000000 / (2 * isr_freq * prescalar);
-    OCR1A = m;                  // load max cycle count
+    OCR1A= 16000000 / (2 * isr_freq * prescalar); // load max cycle count
 
     start_timer();
 }
@@ -43,15 +39,15 @@ void play_note(int note){
 // play each note in a tune
 void play_tune(void){
     timer_init();
-  for(int i = 0; i < 21; i++){
-      int note = notes[i];
-      play_note(note);
-      
+    unsigned char prescalar = 1;
+
+    for(int i = 0; i < 21; i++){
+        int note = notes[i];
+        while(done == 0){} // wait for previous note to finish
+        done = 0;
+        play_note(note, prescalar);
   }
 }
-
-
-
 
 // generate an interrupt at the necessary 
 // interval to flip the output bit to the speaker
@@ -62,15 +58,15 @@ void play_tune(void){
 // generate interrupt every X seconds
 ISR(TIMER1_COMPA_vect)
 {
-    isr_count += 1;         // keep track of how many times the ISR is invoked
+    // if done 
+    isr_count += 1;         // keep track of times ISR is invoked
     
     // reached 0.5s
     if(isr_count == isr_freq){
-        stop_timer();
         isr_count = 0;
+        done = 1; // done playing previous note
+        stop_timer();
     }
-
-    PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
-
     
+    PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
 }

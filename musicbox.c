@@ -79,7 +79,7 @@ int main(void)
   adc_init();
   encoder_init();
   buzzer_init();
-  sei();          //enable global interrupts
+  sei();                //enable global interrupts
 
   splash_screen();      // Show splash screen for 1 second
   lcd_writecommand(1);  // clear the screen
@@ -90,15 +90,15 @@ int main(void)
 	a = input & (1 << PC1);
 	b = input & (1 << PC5);
 
-    if (!b && !a)
-		  old_state = 0;
-    else if (!b && a)
-		  old_state = 1;
-    else if (b && !a)
-		  old_state = 2;
-    else
-		  old_state = 3;
-    new_state = old_state;
+  if (!b && !a)
+    old_state = 0;
+  else if (!b && a)
+    old_state = 1;
+  else if (b && !a)
+    old_state = 2;
+  else
+    old_state = 3;
+  new_state = old_state;
   
   //TODO: Read tune from EEPROM 
 
@@ -172,9 +172,8 @@ int main(void)
 
       // play tune via buzzer
       play_tune();
- 
-   
     }
+    
     /* If rotary encoder was rotated, change note tone */
     if(changed) {
       changed = 0;	// Reset changed flag
