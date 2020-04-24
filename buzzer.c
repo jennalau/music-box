@@ -10,20 +10,21 @@
 #include "musicbox.h"
 
 volatile unsigned char done = 1;
-volatile unsigned char isr_freq = 0;
+volatile unsigned int isr_freq = 0;
+volatile unsigned int isr_count = 0;
 
 void buzzer_init(void) {
     DDRB |= (1 << PB4); 	    // set buzzer output
 }
 void timer_init(void) {
-    TCCR1B |= (1 << WGM12);     // set fast PWM mode
-    TIMSK1 |= (1 << OCIE1A);    // enable timer at interrupt, compare match interrupt
+    TCCR1B |= (1 << WGM12);     // set to CTC mode
+    TIMSK1 |= (1 << OCIE1A);    // enable timer at interrupt
 }
 void start_timer(void) {
-    TCCR1B |= (1 << CS10);
+    TCCR1B |= (1 << CS10);      // bit for prescalar of 1
 }
 void stop_timer(void) {
-    TCCR1B &= ~(1 << CS10);
+    TCCR1B &= ~(1 << CS10);     // bit for prescalar of 1
 }
 
 // play a single note from the notes array
@@ -31,19 +32,27 @@ void play_note(int note, unsigned char prescalar){
     isr_freq = note_freq[note]; // get note frequency
 
     // determining the timer values
-    OCR1A= 16000000 / (2 * isr_freq * prescalar); // load max cycle count
-
+    // if (isr_freq == 0){
+    //     _delay_ms(500); // delay for 0.5 seconds
+    //     done = 1;       // reset flag
+    // } else {
+    //     OCR1A = 16000000 / (2 * isr_freq * prescalar); // load max cycle count
+    //     start_timer();
+    // }
+    OCR1A = 16000000 / (2 * isr_freq); // load max cycle count
+    // OCR1A = 8000000 / (2 * isr_freq);
     start_timer();
 }
 
 // play each note in a tune
 void play_tune(void){
     timer_init();
+    // isr_count = 0;
     unsigned char prescalar = 1;
 
-    for(int i = 0; i < 21; i++){
+    for(int i = 0; i < 20; i++){
         int note = notes[i];
-        while(done == 0){} // wait for previous note to finish
+        while(!done){} // wait for previous note to finish
         done = 0;
         play_note(note, prescalar);
   }
@@ -57,16 +66,15 @@ void play_tune(void){
 
 // generate interrupt every X seconds
 ISR(TIMER1_COMPA_vect)
-{
-    // if done 
+{ 
     isr_count += 1;         // keep track of times ISR is invoked
-    
+
+    PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
+
     // reached 0.5s
     if(isr_count == isr_freq){
         isr_count = 0;
         done = 1; // done playing previous note
         stop_timer();
     }
-    
-    PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
 }

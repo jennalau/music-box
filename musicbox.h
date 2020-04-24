@@ -14,7 +14,6 @@ extern unsigned int count;		// Count to display
 extern unsigned char a, b;
 
 // buzzer
-extern unsigned char isr_count;
-// extern unsigned char done;
+// extern unsigned char isr_count;
 
 // LED

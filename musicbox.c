@@ -17,6 +17,7 @@
 #include "adc.h"
 #include "encoder.h"
 #include "display.h"
+#include "buzzer.h"
 
 #define ADC_CHANNEL 0
 #define left_adc 156
@@ -35,7 +36,7 @@ unsigned char scr_changed = 0;
 int curr_col = 1;
 
 // buzzer definitions
-volatile unsigned char isr_count = 0; 
+
 
 //rotary encoder definitions
 volatile unsigned char new_state, old_state;
@@ -56,7 +57,10 @@ volatile unsigned char a, b;
 //unsigned char notes[NUM_NOTES] = {15, 15, 12, 13, 10, 12, 8, 7, 5, 3, 10, 13, 10, 12};
 
 // E E F G G F E D C C D E E D D   Ode to Joy
-unsigned char notes[21] = {17, 17, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
+unsigned char notes[21] = {17, 17, 18, 20, 20, 
+                          18, 17, 15, 13, 13,
+                          15, 17, 17, 15, 15, 
+                          0,  0,  0,  0,  0};
 // unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
 
 // array of notes, with the index mapping to the note & frequency alike
@@ -99,14 +103,38 @@ int main(void)
   else
     old_state = 3;
   new_state = old_state;
-  
-  //TODO: Read tune from EEPROM 
 
-  //TODO: Check values read in are valid, else use 'notes' default
+  // check if button is held down
+  unsigned char btn_down = 0;
 
 
-  while (1)
-  {    
+  // if(!btn_down) { 
+  //   //TODO: Read tune from EEPROM 
+  //   unsigned char *eeprom_data[21];
+  //   int num_bytes = 21;
+  //   int start_addr = 0;
+  //   eeprom_read_block(eeprom_data, (void *) start_addr, num_bytes);
+
+  //   //TODO: Check values read in are valid (0-25)
+  //   unsigned eeprom_valid = 1;
+  //   for(int i = 0; i < 21; i++){
+  //     unsigned char d = eeprom_data[i];
+  //     if(d > 25){
+  //       eeprom_valid = 0;
+  //       break;
+  //     }
+  //   }
+
+  //   // use eeprom data
+  //   if(eeprom_valid){
+  //     notes = eeprom_data;
+  //   }
+
+  // }
+
+  // use 'notes' as default tune if btn_down or !eeprom_valid
+
+  while (1) {    
     lcd_moveto(0, curr_col);  // update user's cursor
 
     // display new screen
@@ -133,11 +161,11 @@ int main(void)
         if(curr_screen == 2){
           scr_changed = 1;
           next_screen = 1;
-          curr_col = 13;
+          curr_col    = 13;
         } else if (curr_screen == 3){
           scr_changed = 1;
           next_screen = 2;
-          curr_col = 13;
+          curr_col    = 13;
         }
       }
     }
@@ -155,11 +183,11 @@ int main(void)
         if(curr_screen == 1){
           scr_changed = 1;
           next_screen = 2;
-          curr_col = 1;
+          curr_col    = 1;
         } else if (curr_screen == 2){
           scr_changed = 1;
           next_screen = 3;
-          curr_col = 1;
+          curr_col    = 1;
         }
       }
     }
@@ -168,7 +196,7 @@ int main(void)
     else if (slct_press)
     {
       // TODO: write/save tune to EEPROM (non-volatile memory)
-      // save_tune(); 
+      // write_tune(); 
 
       // play tune via buzzer
       play_tune();
@@ -178,7 +206,7 @@ int main(void)
     if(changed) {
       changed = 0;	// Reset changed flag
       update_note();
-      // update_octave();
+      // update_octave(); TODO
       lcd_moveto(0, curr_col);
     }
     curr_screen = next_screen;
