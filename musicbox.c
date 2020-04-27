@@ -18,6 +18,7 @@
 #include "encoder.h"
 #include "display.h"
 #include "buzzer.h"
+#include "led.h"
 
 #define ADC_CHANNEL 0
 #define left_adc 156
@@ -83,6 +84,7 @@ int main(void)
   adc_init();
   encoder_init();
   buzzer_init();
+  // led_init();
   sei();                //enable global interrupts
 
   splash_screen();      // Show splash screen for 1 second

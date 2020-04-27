@@ -22,9 +22,11 @@ void timer_init(void) {
 }
 void start_timer(void) {
     TCCR1B |= (1 << CS10);      // bit for prescalar of 1
+    // TCCR1B |= (0b010 << CS10);
 }
 void stop_timer(void) {
     TCCR1B &= ~(1 << CS10);     // bit for prescalar of 1
+    // TCCR1B &= (0b111 << CS10); 
 }
 
 // play a single note from the notes array
@@ -32,16 +34,15 @@ void play_note(int note, unsigned char prescalar){
     isr_freq = note_freq[note]; // get note frequency
 
     // determining the timer values
-    // if (isr_freq == 0){
-    //     _delay_ms(500); // delay for 0.5 seconds
-    //     done = 1;       // reset flag
-    // } else {
-    //     OCR1A = 16000000 / (2 * isr_freq * prescalar); // load max cycle count
-    //     start_timer();
-    // }
-    OCR1A = 16000000 / (2 * isr_freq); // load max cycle count
-    // OCR1A = 8000000 / (2 * isr_freq);
-    start_timer();
+    if (isr_freq == 0){
+        _delay_ms(500); // delay for 0.5 seconds
+        done = 1;       // reset flag
+    } else {
+        OCR1A = 16000000 / (2 * isr_freq * prescalar); // load max cycle count
+        start_timer();
+    }
+    // OCR1A = 16000000 / (2 * isr_freq); // load max cycle count
+    // start_timer();
 }
 
 // play each note in a tune
@@ -69,12 +70,12 @@ ISR(TIMER1_COMPA_vect)
 { 
     isr_count += 1;         // keep track of times ISR is invoked
 
-    PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
-
     // reached 0.5s
-    if(isr_count == isr_freq){
+    if(isr_count >= isr_freq){
         isr_count = 0;
         done = 1; // done playing previous note
         stop_timer();
+    } else {
+        PORTB ^= (1 << PB4);    // invert PB buzzer output bit (high vs. low)
     }
 }
