@@ -6,21 +6,23 @@
 #include "encoder.h"
 #include "musicbox.h"
 
-#define start_addr 0
 
-eeprom_data;
+// check data read in from eeprom is between 0 & 25
+unsigned char check_eeprom_data_valid(void){
+    unsigned char eeprom_valid = 1;
+    for(int i = 0; i < 21; i++){
+      unsigned char data = eeprom_data[i];
+      if(data > 25){
+        eeprom_valid = 0;
+        break;
+      }
+    }
+    return eeprom_valid;
+}
 
-// read tune from EEPROM
-// void read_tune(void){
-//     return eeprom_data;
-// }
-
-// Check values read in are valid
-// unsigned char check_eeprom_values(void){
-
-// }
-
-// // save/write tune to EEPROM (non-volatile memory)
-// void write_tune(void){
-
-// }
+// set notes array = eeprom_data array
+void update_notes(void){
+    for(int i = 0; i < 21; i++){
+        notes[i] = eeprom_data[i];        
+    }
+}

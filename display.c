@@ -37,13 +37,16 @@ void display_notes_and_octaves(void)
 // determine octave based on index
 int determine_octave(int index){
   int octave = 0;
-  if ((1 <= index) && (index <= 12)){
+  if(index == 0){
+    octave = 0;
+  }
+  else if ((1 <= index) && (index <= 12)){
     octave = 3;
   }
   else if ((13 <= index) && (index <= 24)){
     octave = 4;
   }
-  else if (index == 15){
+  else if (index == 25){
     octave = 5;
   }
   return octave;

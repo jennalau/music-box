@@ -148,13 +148,14 @@ void splash_screen(void){
 
 // update note on rotary encoder change
 void update_note(void){
-    lcd_moveto(0, curr_col);
+    lcd_moveto(0, curr_col); // move to top row
     _delay_ms(100);
     lcd_stringout(note_str[count]);
 }
 // update octave on rotary encoder change
 void update_octave(void){
-  lcd_moveto(1, curr_col);
+  lcd_moveto(1, curr_col); // move to bottom row
   _delay_ms(100);
   display_octave(count, curr_col);
+  lcd_moveto(0, curr_col); // move back to top row
 }

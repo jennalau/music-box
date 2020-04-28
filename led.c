@@ -25,7 +25,7 @@ void led_init(void){
     TCCR2A &= ~(1 << COM2A0); 
 
     // set brightness (0 - 255)
-    OCR2A = 255;
+    OCR2A = 0;
     
     // start timer
     TCCR2B |= (1 << CS21); // prescalar of 1

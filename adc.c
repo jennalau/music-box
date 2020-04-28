@@ -1,8 +1,8 @@
 #include <avr/io.h>
 #include <util/delay.h>
 #include "adc.h"
+#include "musicbox.h"
 
-#define ADC_CHANNEL
 #define margin_of_error 10
 
 #define MUX_BITS  ( (1 << MUX3) | (1 << MUX2) | (1 << MUX1) | (1 << MUX0) )
@@ -85,4 +85,15 @@ int check_button_press(unsigned char input, int adc1, int adc2){
     }
 
     return (pressed_1 || pressed_2);
+}
+
+
+// check if any button on LCD is pressed
+unsigned char check_any_button_press(void){
+    unsigned char input = adc_sample(ADC_CHANNEL);
+    int left_down_press = check_button_press(input, left_adc, down_adc);
+    int right_up_press  = check_button_press(input, right_adc, up_adc);
+    int slct_press      = check_button_press(input, slct_adc, -1000);
+
+    return (left_down_press || right_up_press || slct_press);
 }

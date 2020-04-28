@@ -18,3 +18,14 @@ extern unsigned char encoder_used;
 extern unsigned int note_count;
 extern unsigned int total_notes;
 extern unsigned int pwm_width;
+
+// eeprom
+extern unsigned char eeprom_data[21];
+
+// ADC 
+extern int ADC_CHANNEL;
+extern int left_adc;
+extern int down_adc;
+extern int right_adc;
+extern int up_adc;
+extern int slct_adc;

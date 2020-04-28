@@ -18,6 +18,23 @@ void encoder_init(void) {
 	PCMSK1 |= ((1 << PCINT9) | (1 << PCINT13));	// set PCINT9 (PC1) & PCINT13 (PC5) in PORTC mask register
 }
 
+void read_encoder_init_state(void){
+	unsigned char input = PINC;
+	a = input & (1 << PC1);
+	b = input & (1 << PC5);
+	if (!b && !a)
+		old_state = 0;
+	else if (!b && a)
+		old_state = 1;
+	else if (b && !a)
+		old_state = 2;
+	else
+		old_state = 3;
+	new_state = old_state;
+}
+
+
+
 // interrupts for PORTC buzzer
 ISR(PCINT1_vect) {
 	// Read the input bits and determine A and B
@@ -32,8 +49,8 @@ ISR(PCINT1_vect) {
 		// Handle A and B inputs for state 0
 		if(a){ // a = 1
 			new_state = 1;
-      if(count < 25)
-        count += 1;
+		if(count < 25)
+			count += 1;
 		} else if (b) { // b = 1
 			new_state = 2; 
 			if(count > 0)
@@ -49,7 +66,7 @@ ISR(PCINT1_vect) {
 		} else if (b) {
 			new_state = 3;
 			if(count < 25)
-        count += 1;
+        		count += 1;
 		}
 	}
 	else if (old_state == 2) {
@@ -61,7 +78,7 @@ ISR(PCINT1_vect) {
 		} else if (!b){
 			new_state = 0;
 			if(count < 25)
-        count += 1;
+        		count += 1;
 		}
 	}
 	else {   // old_state = 3
@@ -69,7 +86,7 @@ ISR(PCINT1_vect) {
 		if(!a){
 			new_state = 2;
 			if(count < 25)
-        count += 1;
+        		count += 1;
 		} else if (!b){
 			new_state = 1;
 			if(count > 0)

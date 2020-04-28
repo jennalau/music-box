@@ -19,13 +19,14 @@
 #include "display.h"
 #include "buzzer.h"
 #include "led.h"
+#include "eeprom.h"
 
-#define ADC_CHANNEL 0
-#define left_adc 156
-#define down_adc 104
-#define right_adc 0
-#define up_adc 52
-#define slct_adc 205
+int ADC_CHANNEL = 0;
+int left_adc = 156;
+int down_adc = 104;
+int right_adc = 0;
+int up_adc = 52;
+int slct_adc = 205;
 
 #define NUM_TONES 26
 #define NUM_NOTES 21
@@ -46,6 +47,9 @@ volatile unsigned int count = 0;		// count of note_str index
 volatile unsigned char a, b;
 unsigned char encoder_used = 0;
 
+//eeprom
+unsigned char eeprom_data[21];
+
 /* Some sample tunes for testing */
 /*
   The "notes" array is used to store the music that will be played.  Each value
@@ -59,11 +63,11 @@ unsigned char encoder_used = 0;
 //unsigned char notes[NUM_NOTES] = {15, 15, 12, 13, 10, 12, 8, 7, 5, 3, 10, 13, 10, 12};
 
 // E E F G G F E D C C D E E D D   Ode to Joy
-unsigned char notes[21] = {17, 17, 18, 20, 20, 
-                          18, 17, 15, 13, 13,
-                          15, 17, 17, 15, 15, 
-                          0,  0,  0,  0,  0};
-// unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
+// unsigned char notes[21] = {17, 17, 18, 20, 20, 
+//                           18, 17, 15, 13, 13,
+//                           15, 17, 17, 15, 15, 
+//                           0,  0,  0,  0,  0};
+unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
 
 // array of notes, with the index mapping to the note & frequency alike
 char *note_str[] = {"  ", "C ","C#", "D ","D#", "E ","F ", "F#",
@@ -86,66 +90,32 @@ int main(void)
   encoder_init();
   buzzer_init();
   led_init();
-  sei();                //enable global interrupts
+  sei();                      //enable global interrupts
 
-  splash_screen();      // Show splash screen for 1 second
+  splash_screen();            // Show splash screen for 1 second
 
-  // Read initial state of rotary encoder
-	unsigned char input = PINC;
-	a = input & (1 << PC1);
-	b = input & (1 << PC5);
-  if (!b && !a)
-    old_state = 0;
-  else if (!b && a)
-    old_state = 1;
-  else if (b && !a)
-    old_state = 2;
-  else
-    old_state = 3;
-  new_state = old_state;
+  read_encoder_init_state();  // Read initial state of rotary encoder
 
   // check if button is held down
-  unsigned char btn_down = 0;
+  unsigned char btn_down = check_any_button_press();
 
   // no reset
   if(!btn_down) { 
     // Read tune from EEPROM 
-    unsigned char eeprom_data[21];
     eeprom_read_block(eeprom_data, (void *) 100, 21);
 
-    // Check values read in are valid (0-25)
-    unsigned char eeprom_valid = 1;
-    for(int i = 0; i < 21; i++){
-      unsigned char data = eeprom_data[i];
-      if(data > 25){
-        eeprom_valid = 0;
-        // char dat[20];
-        // snprintf(dat, 20, "idx=%2d, data=%2d", i, data);
-        // lcd_writecommand(1);
-        // lcd_moveto(1, 0);
-        // lcd_stringout(dat);
-        break;
-      }
-    }
+    // Check EEPROM values read in are valid
+    unsigned char eeprom_valid = check_eeprom_data_valid();
 
-    // use eeprom data if all data is valid
-    if(eeprom_valid){
-      // set notes = eeprom_data;
-      for(int i = 0; i < 21; i++){
-        notes[i] = eeprom_data[i];
-        // lcd_writecommand(1);
-        // char note[20];
-        // snprintf(note, 20, "i=%2d, cnt=%2d", i, notes[i]);
-        // lcd_moveto(1, 0);
-        // lcd_stringout(note);
-        // _delay_ms(4000);
-        
-      }
+    if(eeprom_valid){       // use eeprom data 
+      update_notes();       // if all data is valid
     }
   }
-  // use 'notes' as default tune if btn_down or !eeprom_valid
+  // if reset (btwn_down) or invalid data, use default notes & leave as is
+
+
   lcd_writecommand(1);  // clear the screen
-  show_screen();        // display arrows & notes/octaves on LCD
+  show_screen();        // initial display: arrows & notes/octaves on LCD
 
   while (1) {    
     lcd_moveto(0, curr_col);  // update user's cursor
@@ -159,9 +129,9 @@ int main(void)
     /* If rotary encoder was rotated, change note tone */
     if(changed) {
       encoder_used = 1;
-      changed = 0;	// Reset changed flag
+      changed = 0;	// reset flag
       update_note();
-      // update_octave(); TODO
+      update_octave();
       lcd_moveto(0, curr_col);
     }
 
@@ -219,34 +189,24 @@ int main(void)
     {
       // only update notes array if rotary encoder changed
       if(encoder_used){
+
         encoder_used = 0; // reset flag
+
         // determine which index of notes array to update
-        unsigned char start_val = 0; // for screen 1
+        unsigned char start_val = 0; // 0 for screen 1
         if(curr_screen == 2) {
           start_val = 7;
         } else if (curr_screen == 3) {
           start_val = 14;
         }
-        int add = (curr_col - 1) / 2; // value to add and calculate index
+
+        int add = (curr_col - 1) / 2; // value to add & calculate index
         int updated_index = start_val + add;
 
-        // update array
-        // char notes1[14];
-        // snprintf(notes1, 20, "1n[idx]=%2d", notes[updated_index]);
-        // lcd_writecommand(1);
-        // lcd_moveto(0, 0);
-        // lcd_stringout(notes1);
-
-        notes[updated_index] = count; 
-        // char notes2[14];
-        // snprintf(notes2, 20, "2n[idx]=%2d", notes[updated_index]);
-        // lcd_moveto(1, 0);
-        // lcd_stringout(notes2);
-
-        
+        // update notes array
+        notes[updated_index] = count;         
       }
 
-      
       // Write/save tune to EEPROM (non-volatile memory)
       // 100 = address, 25 = bytes of notes array
       eeprom_update_block(notes, (void *) 100, 21);
@@ -254,9 +214,7 @@ int main(void)
       // play tune & adjust LED brightness via buzzer
       play_tune();
     }
-    
-    
-    curr_screen = next_screen;
+    curr_screen = next_screen; // update screen
   }
   while (1) {} // Loop forever
 }
