@@ -13,6 +13,11 @@ volatile unsigned char done = 1;
 volatile unsigned int isr_freq = 0;
 volatile unsigned int isr_count = 0;
 
+// LED 
+unsigned int note_count = 0;
+unsigned int total_notes = 0;
+// volatile unsigned int pwm_width = 0;
+
 void buzzer_init(void) {
     DDRB |= (1 << PB4); 	    // set buzzer output
 }
@@ -29,6 +34,20 @@ void stop_timer(void) {
     // TCCR1B &= (0b111 << CS10); 
 }
 
+// count number of rest notes
+unsigned char count_rest_notes(void){
+    unsigned char num_rests = 0;
+
+    for(int i = 0; i < 20; i++){
+        int n = notes[i];
+        unsigned int freq = note_freq[n];
+        if(freq == 0){
+            num_rests++;
+        }
+    }
+    return num_rests;
+}
+
 // play a single note from the notes array
 void play_note(int note, unsigned char prescalar){
     isr_freq = note_freq[note]; // get note frequency
@@ -41,22 +60,35 @@ void play_note(int note, unsigned char prescalar){
         OCR1A = 16000000 / (2 * isr_freq * prescalar); // load max cycle count
         start_timer();
     }
-    // OCR1A = 16000000 / (2 * isr_freq); // load max cycle count
-    // start_timer();
 }
 
 // play each note in a tune
 void play_tune(void){
     timer_init();
-    // isr_count = 0;
     unsigned char prescalar = 1;
+
+    // number of non-rest notes
+    // unsigned char total_notes = 21 - count_rest_notes();
+    total_notes = 16;
 
     for(int i = 0; i < 20; i++){
         int note = notes[i];
-        while(!done){} // wait for previous note to finish
-        done = 0;
+        while(!done){} // wait for previous 
+        done = 0;      // note to finish
         play_note(note, prescalar);
-  }
+
+        // non-rest (show on LED)
+        if(note_freq[note] != 0) {
+            note_count++; // increment note count
+            pwm_width = (255 * note_count) / total_notes; //turn LED on
+        } else {
+            pwm_width = 0;  //turn LED off on rest note
+        }
+
+
+    }
+    note_count = 0;
+    total_notes = 0;
 }
 
 // generate an interrupt at the necessary 

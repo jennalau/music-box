@@ -17,3 +17,6 @@ extern unsigned char a, b;
 // extern unsigned char isr_count;
 
 // LED
+extern unsigned int note_count;
+extern unsigned int total_notes;
+extern unsigned int pwm_width;

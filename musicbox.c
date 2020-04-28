@@ -36,8 +36,8 @@ unsigned char next_screen = 1;
 unsigned char scr_changed = 0;
 int curr_col = 1;
 
-// buzzer definitions
-
+// LED definitions
+volatile unsigned int pwm_width = 0;
 
 //rotary encoder definitions
 volatile unsigned char new_state, old_state;
@@ -84,12 +84,13 @@ int main(void)
   adc_init();
   encoder_init();
   buzzer_init();
-  // led_init();
+  led_init();
   sei();                //enable global interrupts
 
   splash_screen();      // Show splash screen for 1 second
   lcd_writecommand(1);  // clear the screen
   show_screen();        // display arrows & notes/octaves on LCD
+
 
   // Read initial state of rotary encoder
 	unsigned char input = PINC;
@@ -107,7 +108,7 @@ int main(void)
   new_state = old_state;
 
   // check if button is held down
-  unsigned char btn_down = 0;
+  // unsigned char btn_down = 0;
 
 
   // if(!btn_down) { 
