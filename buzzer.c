@@ -31,19 +31,6 @@ void stop_timer(void) {
     TCCR1B &= ~(1 << CS10);     // bit for prescalar of 1
 }
 
-// count number of rest notes
-unsigned char count_rest_notes(void){
-    unsigned char num_rests = 0;
-
-    for(int i = 0; i < 21; i++){
-        int n = notes[i];
-        unsigned int freq = note_freq[n];
-        if(freq == 0){
-            num_rests++;
-        }
-    }
-    return num_rests;
-}
 // count number of trailing rest notes in tune
 unsigned char count_trailing_rests(void){
     unsigned char num_rests = 0;
@@ -57,7 +44,6 @@ unsigned char count_trailing_rests(void){
             break;
         }
     }
-
     return num_rests;
 }
 
