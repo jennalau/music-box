@@ -12,9 +12,7 @@ extern unsigned char new_state, old_state;
 extern unsigned char changed;   // Flag for state change
 extern unsigned int count;		// Count to display
 extern unsigned char a, b;
-
-// buzzer
-// extern unsigned char isr_count;
+extern unsigned char encoder_used;
 
 // LED
 extern unsigned int note_count;

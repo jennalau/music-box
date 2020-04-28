@@ -16,7 +16,6 @@ volatile unsigned int isr_count = 0;
 // LED 
 unsigned int note_count = 0;
 unsigned int total_notes = 0;
-// volatile unsigned int pwm_width = 0;
 
 void buzzer_init(void) {
     DDRB |= (1 << PB4); 	    // set buzzer output
@@ -27,18 +26,16 @@ void timer_init(void) {
 }
 void start_timer(void) {
     TCCR1B |= (1 << CS10);      // bit for prescalar of 1
-    // TCCR1B |= (0b010 << CS10);
 }
 void stop_timer(void) {
     TCCR1B &= ~(1 << CS10);     // bit for prescalar of 1
-    // TCCR1B &= (0b111 << CS10); 
 }
 
 // count number of rest notes
 unsigned char count_rest_notes(void){
     unsigned char num_rests = 0;
 
-    for(int i = 0; i < 20; i++){
+    for(int i = 0; i < 21; i++){
         int n = notes[i];
         unsigned int freq = note_freq[n];
         if(freq == 0){
@@ -68,10 +65,9 @@ void play_tune(void){
     unsigned char prescalar = 1;
 
     // number of non-rest notes
-    // unsigned char total_notes = 21 - count_rest_notes();
-    total_notes = 16;
+    unsigned char total_notes = 21 - count_rest_notes();
 
-    for(int i = 0; i < 20; i++){
+    for(int i = 0; i < 21; i++){
         int note = notes[i];
         while(!done){} // wait for previous 
         done = 0;      // note to finish
@@ -84,20 +80,14 @@ void play_tune(void){
         } else {
             pwm_width = 0;  //turn LED off on rest note
         }
-
-
     }
-    note_count = 0;
+    note_count  = 0;
     total_notes = 0;
 }
 
-// generate an interrupt at the necessary 
-// interval to flip the output bit to the speaker
 
 // depending on note frequency, update the timer 
 // each time you want to play a different frequency.
-
-// generate interrupt every X seconds
 ISR(TIMER1_COMPA_vect)
 { 
     isr_count += 1;         // keep track of times ISR is invoked

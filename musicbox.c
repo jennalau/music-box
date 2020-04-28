@@ -44,6 +44,7 @@ volatile unsigned char new_state, old_state;
 volatile unsigned char changed = 0;  // Flag for encoder state change
 volatile unsigned int count = 0;		// count of note_str index
 volatile unsigned char a, b;
+unsigned char encoder_used = 0;
 
 /* Some sample tunes for testing */
 /*
@@ -88,15 +89,11 @@ int main(void)
   sei();                //enable global interrupts
 
   splash_screen();      // Show splash screen for 1 second
-  lcd_writecommand(1);  // clear the screen
-  show_screen();        // display arrows & notes/octaves on LCD
-
 
   // Read initial state of rotary encoder
 	unsigned char input = PINC;
 	a = input & (1 << PC1);
 	b = input & (1 << PC5);
-
   if (!b && !a)
     old_state = 0;
   else if (!b && a)
@@ -108,34 +105,47 @@ int main(void)
   new_state = old_state;
 
   // check if button is held down
-  // unsigned char btn_down = 0;
+  unsigned char btn_down = 0;
 
+  // no reset
+  if(!btn_down) { 
+    // Read tune from EEPROM 
+    unsigned char eeprom_data[21];
+    eeprom_read_block(eeprom_data, (void *) 100, 21);
 
-  // if(!btn_down) { 
-  //   //TODO: Read tune from EEPROM 
-  //   unsigned char *eeprom_data[21];
-  //   int num_bytes = 21;
-  //   int start_addr = 0;
-  //   eeprom_read_block(eeprom_data, (void *) start_addr, num_bytes);
+    // Check values read in are valid (0-25)
+    unsigned char eeprom_valid = 1;
+    for(int i = 0; i < 21; i++){
+      unsigned char data = eeprom_data[i];
+      if(data > 25){
+        eeprom_valid = 0;
+        // char dat[20];
+        // snprintf(dat, 20, "idx=%2d, data=%2d", i, data);
+        // lcd_writecommand(1);
+        // lcd_moveto(1, 0);
+        // lcd_stringout(dat);
+        break;
+      }
+    }
 
-  //   //TODO: Check values read in are valid (0-25)
-  //   unsigned eeprom_valid = 1;
-  //   for(int i = 0; i < 21; i++){
-  //     unsigned char d = eeprom_data[i];
-  //     if(d > 25){
-  //       eeprom_valid = 0;
-  //       break;
-  //     }
-  //   }
-
-  //   // use eeprom data
-  //   if(eeprom_valid){
-  //     notes = eeprom_data;
-  //   }
-
-  // }
-
+    // use eeprom data if all data is valid
+    if(eeprom_valid){
+      // set notes = eeprom_data;
+      for(int i = 0; i < 21; i++){
+        notes[i] = eeprom_data[i];
+        // lcd_writecommand(1);
+        // char note[20];
+        // snprintf(note, 20, "i=%2d, cnt=%2d", i, notes[i]);
+        // lcd_moveto(1, 0);
+        // lcd_stringout(note);
+        // _delay_ms(4000);
+        
+      }
+    }
+  }
   // use 'notes' as default tune if btn_down or !eeprom_valid
+  lcd_writecommand(1);  // clear the screen
+  show_screen();        // display arrows & notes/octaves on LCD
 
   while (1) {    
     lcd_moveto(0, curr_col);  // update user's cursor
@@ -144,6 +154,15 @@ int main(void)
     if(scr_changed){
       show_screen();
       scr_changed = 0; // reset flag
+    }
+
+    /* If rotary encoder was rotated, change note tone */
+    if(changed) {
+      encoder_used = 1;
+      changed = 0;	// Reset changed flag
+      update_note();
+      // update_octave(); TODO
+      lcd_moveto(0, curr_col);
     }
 
     /* Check if a button on the LCD was pressed */
@@ -198,20 +217,45 @@ int main(void)
     // select button pressed
     else if (slct_press)
     {
-      // TODO: write/save tune to EEPROM (non-volatile memory)
-      // write_tune(); 
+      // only update notes array if rotary encoder changed
+      if(encoder_used){
+        encoder_used = 0; // reset flag
+        // determine which index of notes array to update
+        unsigned char start_val = 0; // for screen 1
+        if(curr_screen == 2) {
+          start_val = 7;
+        } else if (curr_screen == 3) {
+          start_val = 14;
+        }
+        int add = (curr_col - 1) / 2; // value to add and calculate index
+        int updated_index = start_val + add;
 
-      // play tune via buzzer
+        // update array
+        // char notes1[14];
+        // snprintf(notes1, 20, "1n[idx]=%2d", notes[updated_index]);
+        // lcd_writecommand(1);
+        // lcd_moveto(0, 0);
+        // lcd_stringout(notes1);
+
+        notes[updated_index] = count; 
+        // char notes2[14];
+        // snprintf(notes2, 20, "2n[idx]=%2d", notes[updated_index]);
+        // lcd_moveto(1, 0);
+        // lcd_stringout(notes2);
+
+        
+      }
+
+      
+      // Write/save tune to EEPROM (non-volatile memory)
+      // 100 = address, 25 = bytes of notes array
+      eeprom_update_block(notes, (void *) 100, 21);
+
+      // play tune & adjust LED brightness via buzzer
       play_tune();
     }
     
-    /* If rotary encoder was rotated, change note tone */
-    if(changed) {
-      changed = 0;	// Reset changed flag
-      update_note();
-      // update_octave(); TODO
-      lcd_moveto(0, curr_col);
-    }
+    
     curr_screen = next_screen;
   }
   while (1) {} // Loop forever

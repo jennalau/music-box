@@ -34,5 +34,4 @@ void led_init(void){
 
 ISR(TIMER2_OVF_vect){
   OCR2A = pwm_width;  //set OCR2A (pwm width)
-  // OCR2A = 0;
 }
