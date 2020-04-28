@@ -63,11 +63,11 @@ unsigned char eeprom_data[21];
 //unsigned char notes[NUM_NOTES] = {15, 15, 12, 13, 10, 12, 8, 7, 5, 3, 10, 13, 10, 12};
 
 // E E F G G F E D C C D E E D D   Ode to Joy
-// unsigned char notes[21] = {17, 17, 18, 20, 20, 
-//                           18, 17, 15, 13, 13,
-//                           15, 17, 17, 15, 15, 
-//                           0,  0,  0,  0,  0};
-unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
+unsigned char notes[21] = {17, 0, 0, 0, 20, 
+                          18, 17, 15, 13, 13,
+                          15, 17, 17, 15, 15, 
+                          0,  0,  0,  0,  0};
+// unsigned char notes[NUM_NOTES] = {17, 0, 18, 20, 20, 18, 17, 15, 13, 13, 15, 17, 17, 15, 15};
 
 // array of notes, with the index mapping to the note & frequency alike
 char *note_str[] = {"  ", "C ","C#", "D ","D#", "E ","F ", "F#",

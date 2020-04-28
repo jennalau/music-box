@@ -44,6 +44,22 @@ unsigned char count_rest_notes(void){
     }
     return num_rests;
 }
+// count number of trailing rest notes in tune
+unsigned char count_trailing_rests(void){
+    unsigned char num_rests = 0;
+
+    for(int i = 20; i >= 0; i--){
+        int n = notes[i];
+        unsigned int freq = note_freq[n];
+        if(freq == 0){
+            num_rests++;
+        } else {
+            break;
+        }
+    }
+
+    return num_rests;
+}
 
 // play a single note from the notes array
 void play_note(int note, unsigned char prescalar){
@@ -65,7 +81,7 @@ void play_tune(void){
     unsigned char prescalar = 1;
 
     // number of non-rest notes
-    unsigned char total_notes = 21 - count_rest_notes();
+    unsigned char total_notes = 21 - count_trailing_rests();
 
     for(int i = 0; i < 21; i++){
         int note = notes[i];
@@ -73,13 +89,14 @@ void play_tune(void){
         done = 0;      // note to finish
         play_note(note, prescalar);
 
-        // non-rest (show on LED)
-        if(note_freq[note] != 0) {
+        // increase brightness for notes that are not trailing rests notes
+        if(i < total_notes){
             note_count++; // increment note count
             pwm_width = (255 * note_count) / total_notes; //turn LED on
         } else {
-            pwm_width = 0;  //turn LED off on rest note
+            pwm_width = 0;
         }
+        
     }
     note_count  = 0;
     total_notes = 0;
